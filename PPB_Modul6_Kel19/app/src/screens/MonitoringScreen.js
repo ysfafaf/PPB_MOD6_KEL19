@@ -18,9 +18,12 @@ import { useMqttSensor } from "../hooks/useMqttSensor.js";
 import { Api } from "../services/api.js";
 import { DataTable } from "../components/DataTable.js";
 import { TempOrb } from "../components/TempOrb.js";
+import { PaginationBar } from "../components/PaginationBar.js";
 import { tokens } from "../theme/tokens.js";
 
 const { color, space, radius, shadow } = tokens;
+
+const PAGE_SIZE = 5;
 
 function StatusChip({ connectionState, hasError, onRetry }) {
 	const config = useMemo(() => {
@@ -107,6 +110,7 @@ export function MonitoringScreen() {
 	const [loading, setLoading] = useState(false);
 	const [refreshing, setRefreshing] = useState(false);
 	const [apiError, setApiError] = useState(null);
+	const [page, setPage] = useState(1);
 	const reduceMotion = useReducedMotion();
 
 	const fetchReadings = useCallback(async () => {
@@ -118,6 +122,7 @@ export function MonitoringScreen() {
 				Api.getThresholds().catch(() => null),
 			]);
 			setReadings(history ?? []);
+			setPage(1);
 			const latest = Array.isArray(thresholds) ? thresholds[0]?.value : null;
 			setLatestThreshold(typeof latest === "number" ? latest : null);
 		} catch (err) {
@@ -188,6 +193,12 @@ export function MonitoringScreen() {
 			? Date.parse(timestamp)
 			: 0;
 
+	// ── Pagination ─────────────────────────────────────────────────────────────
+	const totalPages = Math.ceil((readings?.length ?? 0) / PAGE_SIZE);
+	const pagedData = Array.isArray(readings)
+		? readings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+		: [];
+
 	return (
 		<View style={styles.safe}>
 			<ScrollView
@@ -227,13 +238,15 @@ export function MonitoringScreen() {
 					>
 						<View style={styles.orbWrap}>
 							<TempOrb
-								tint={proximity ? proximity.statusColor : color.text}
+								tint={proximity ? proximity.statusColor : color.primary}
 								beatKey={beatKey}
 								dimmed={
 									connectionState !== "connected" &&
 									connectionState !== "reconnecting"
 								}
 								size={320}
+								temperature={typeof temperature === "number" ? temperature : null}
+								threshold={latestThreshold}
 							/>
 							<View style={styles.orbNumber} pointerEvents="none">
 								<View style={styles.orbNumberRow}>
@@ -402,13 +415,19 @@ export function MonitoringScreen() {
 								typeof value === "number" ? Number(value).toFixed(2) : "--",
 						},
 					]}
-					data={readings}
+					data={pagedData}
 					keyExtractor={(item) => item.id}
 					loading={loading && !refreshing}
 					emptyTitle="No readings yet"
 					emptyMessage="Triggered readings appear here. Pull to refresh."
 					emptyActionLabel="Refresh"
 					onEmptyAction={fetchReadings}
+				/>
+				<PaginationBar
+					page={page}
+					totalPages={totalPages}
+					onPrev={() => setPage((p) => Math.max(1, p - 1))}
+					onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
 				/>
 			</ScrollView>
 		</View>
@@ -594,3 +613,4 @@ const styles = StyleSheet.create({
 		transform: [{ scale: 0.98 }],
 	},
 });
+

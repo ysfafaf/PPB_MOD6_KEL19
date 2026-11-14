@@ -4,7 +4,7 @@
     "slug": "livetemp-slug",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/hima.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
@@ -22,7 +22,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "backendUrl": "http://10.131.236.184:5002",
+      "backendUrl": "http://192.168.100.64:5002",
       "mqtt": {
         "brokerUrl": "wss://broker.hivemq.com:8884/mqtt",
         "topic": "ppb/kel19/iot/temperature"
